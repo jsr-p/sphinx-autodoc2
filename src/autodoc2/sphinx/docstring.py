@@ -9,6 +9,7 @@ from docutils import nodes
 from docutils.parsers import Parser, get_parser_class
 from docutils.parsers.rst import directives, roles
 from docutils.statemachine import StringList
+from sphinx.ext.napoleon.docstring import NumpyDocstring, GoogleDocstring
 from sphinx.util.docutils import SphinxDirective, new_document
 from sphinx.util.logging import prefixed_warnings
 
@@ -147,7 +148,9 @@ class DocstringRenderer(SphinxDirective):
                 children = document.children or []
 
             else:
-                doc_lines = item["doc"].splitlines()
+                numpy_docstring = str(NumpyDocstring(item["doc"], self.env.config))
+                google_docstring = str(GoogleDocstring(numpy_docstring, self.env.config))
+                doc_lines = google_docstring.splitlines()
                 if source_path:
                     # Here we perform a nested render, but temporarily setup the document/reporter
                     # with the correct document path and lineno for the included file.
