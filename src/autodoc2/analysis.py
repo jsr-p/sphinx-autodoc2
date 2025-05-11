@@ -6,12 +6,12 @@ It simply yields `ItemData` typed-dicts.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
 import itertools
 import os
-from pathlib import Path
 import sys
 import typing as t
+from dataclasses import dataclass, replace
+from pathlib import Path
 
 from astroid import nodes
 from astroid.builder import AstroidBuilder
@@ -322,6 +322,29 @@ def yield_class_def(node: nodes.ClassDef, state: State) -> t.Iterable[ItemData]:
         overridden.update(seen)
 
 
+def yield_type_alias(node: nodes.ClassDef, state: State) -> t.Iterable[ItemData]:
+
+    type_ = "typealias"
+
+    data: ItemData = {
+        "type": type_,
+        "full_name": _get_full_name(node.name.as_string(), state.name_stack),
+        "doc": "",
+        "value": node.value.as_string(),
+        "annotation": "",
+    }
+    if node.fromlineno is not None and node.tolineno is not None:
+        data["range"] = (node.fromlineno, node.tolineno + 1)
+
+    doc_node = node.next_sibling()
+    if isinstance(doc_node, nodes.Expr) and isinstance(doc_node.value, nodes.Const):
+        doc = doc_node.value.value
+
+        if doc:
+            data["doc"] = doc
+    yield data
+
+
 _FUNC_MAPPER: dict[
     nodes.NodeNG, t.Callable[[nodes.NodeNG, State], t.Iterable[ItemData]]
 ] = {
@@ -331,4 +354,5 @@ _FUNC_MAPPER: dict[
     nodes.FunctionDef: yield_function_def,
     nodes.AsyncFunctionDef: yield_function_def,
     nodes.ClassDef: yield_class_def,
+    nodes.TypeAlias: yield_type_alias,
 }

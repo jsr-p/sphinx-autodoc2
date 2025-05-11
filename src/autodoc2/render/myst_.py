@@ -42,6 +42,8 @@ class MystRenderer(RendererBase):
             yield from self.render_attribute(item)
         elif type_ == "data":
             yield from self.render_data(item)
+        elif type_ == "typealias":
+            yield from self.render_typealias(item)
         else:
             self.warn(f"Unknown item type {type_!r} for {full_name!r}")
 
@@ -363,6 +365,22 @@ class MystRenderer(RendererBase):
             yield f"   {value}"
 
         yield ""
+        if self.show_docstring(item):
+            yield f"```{{autodoc2-docstring}} {item['full_name']}"
+            if parser_name := self.get_doc_parser(item["full_name"]):
+                yield f":parser: {parser_name}"
+            yield "```"
+            yield ""
+        yield "````"
+        yield ""
+
+    def render_typealias(self, item: ItemData) -> t.Iterable[str]:
+        """Create the content for a type alias."""
+        short_name = item["full_name"].split(".")[-1]
+        yield f"````{{py:type}} {short_name }"
+        value = item.get("value")
+        yield f":canonical: {value}"
+        # yield f":type: {value}"
         if self.show_docstring(item):
             yield f"```{{autodoc2-docstring}} {item['full_name']}"
             if parser_name := self.get_doc_parser(item["full_name"]):
